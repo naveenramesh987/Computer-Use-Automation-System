@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.env
+*.log
+npm-debug.log*
+
+# Playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/
+
+# Evidence can get large (screenshots, traces) — keep a curated subset committed,
+# ignore anything under a local-only scratch prefix.
+evidence/**/local-*

@@ -1,0 +1,31 @@
+{
+  "name": "computer-use-automation-system",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Discover-once, replay-many automation for legacy back-office UIs.",
+  "type": "module",
+  "scripts": {
+    "mock-app": "tsx mock-app/server.ts",
+    "discover": "tsx src/cli/discover.ts",
+    "replay": "tsx src/cli/replay.ts",
+    "operator": "tsx src/escalation/operator-server.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.1",
+    "express": "^4.21.1",
+    "ejs": "^3.1.10",
+    "playwright": "^1.48.2",
+    "zod": "^3.23.8",
+    "dotenv": "^16.4.5",
+    "nanoid": "^5.0.9"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "tsx": "^4.19.2",
+    "vitest": "^2.1.4",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.9.0"
+  }
+}
