@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Member Services Console - Sign In</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<table width="100%" bgcolor="#c0c0c0" cellpadding="0" cellspacing="0">
+<tr><td align="center">
+<table width="360" bgcolor="#ffffff" cellpadding="12" style="border: 2px solid #000080; margin-top: 60px;">
+<tr><td>
+
+<font face="Verdana" size="+2" color="#000080"><b>Member Services Console</b></font><br>
+<font face="Verdana" size="-1">Internal Use Only - Bank Ops</font>
+<hr>
+
+<% if (reason === "session_expired") { %>
+  <p><font color="red">Your session has expired. Please sign in again.</font></p>
+<% } %>
+
+<% if (error) { %>
+  <p><font color="red"><%= error %></font></p>
+<% } %>
+
+<form method="POST" action="/login">
+  <table cellpadding="6">
+    <tr><td><label>Operator ID<br><input type="text" name="username"></label></td></tr>
+    <tr><td><label>Password<br><input type="password" name="password"></label></td></tr>
+  </table>
+  <br>
+  <button type="submit">Sign In</button>
+</form>
+
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>

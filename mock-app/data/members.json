@@ -1,0 +1,50 @@
+[
+  {
+    "id": "12345",
+    "name": "John Smith",
+    "status": "active",
+    "savingsBalance": 4231.55
+  },
+  {
+    "id": "23456",
+    "name": "Mary Johnson",
+    "status": "active",
+    "savingsBalance": 812.1
+  },
+  {
+    "id": "34567",
+    "name": "James Brown",
+    "status": "active",
+    "savingsBalance": 15320.0
+  },
+  {
+    "id": "45678",
+    "name": "Patricia Davis",
+    "status": "active",
+    "savingsBalance": 0.0
+  },
+  {
+    "id": "56789",
+    "name": "Robert Wilson",
+    "status": "active",
+    "savingsBalance": 990.25
+  },
+  {
+    "id": "67890",
+    "name": "Linda Miller",
+    "status": "active",
+    "savingsBalance": 2200.0
+  },
+  {
+    "id": "78901",
+    "name": "Michael Moore",
+    "status": "active",
+    "savingsBalance": 640.75
+  },
+  {
+    "id": "40404",
+    "name": "Barbara Taylor",
+    "status": "locked",
+    "savingsBalance": 5000.0
+  }
+]

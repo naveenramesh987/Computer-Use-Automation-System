@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Member Services Console - Search</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<table width="100%" bgcolor="#c0c0c0" cellpadding="10">
+<tr><td>
+
+<font face="Times New Roman" size="+1" color="#000080"><b>Member Services Console</b></font>
+&nbsp;&nbsp;
+<font size="-1">Signed in as <%= operatorName %></font>
+&nbsp;&nbsp;
+<a href="/logout">Sign Out</a>
+<hr>
+
+<form method="GET" action="/members">
+  <label>Member ID or Name<br><input type="text" name="query" value="<%= query %>"></label>
+  <button type="submit">Search</button>
+</form>
+
+<% if (query) { %>
+  <% if (results.length === 0) { %>
+    <p><font color="red">No members found matching "<%= query %>".</font></p>
+  <% } else { %>
+    <table border="1" cellpadding="6" bgcolor="#ffffff">
+      <tr bgcolor="#dddddd"><td><b>Member ID</b></td><td><b>Name</b></td><td><b>Status</b></td><td></td></tr>
+      <% results.forEach(function(m) { %>
+      <tr>
+        <td><%= m.id %></td>
+        <td><%= m.name %></td>
+        <td><%= m.status %></td>
+        <td><a href="/members/<%= m.id %>">View</a></td>
+      </tr>
+      <% }) %>
+    </table>
+  <% } %>
+<% } %>
+
+</td></tr>
+</table>
+</body>
+</html>
