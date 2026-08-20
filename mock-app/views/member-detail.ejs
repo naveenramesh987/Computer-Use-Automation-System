@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Member Services Console - Member <%= id %></title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<table width="100%" bgcolor="#c0c0c0" cellpadding="10">
+<tr><td>
+
+<font face="Verdana" size="+1" color="#000080"><b>Member Services Console</b></font>
+&nbsp;&nbsp;
+<a href="/members">Back to Search</a>
+<hr>
+
+<% if (state === "invalid_format") { %>
+  <p><font color="red">Invalid member ID format: "<%= id %>". Member IDs must be 5 digits.</font></p>
+<% } else if (state === "not_found") { %>
+  <p><font color="red">No member found with ID <%= id %>.</font></p>
+<% } else if (state === "locked") { %>
+  <p><font color="red">Access denied: member <%= id %> is locked. Contact a supervisor to proceed.</font></p>
+<% } else { %>
+
+  <table border="1" cellpadding="6" bgcolor="#ffffff">
+    <tr><td><b>Member ID</b></td><td><%= member.id %></td></tr>
+    <tr><td><b>Name</b></td><td><%= member.name %></td></tr>
+    <tr><td><b>Status</b></td><td><%= member.status %></td></tr>
+    <tr><td><b>Current Savings Balance</b></td><td>$<%= member.savingsBalance.toFixed(2) %></td></tr>
+  </table>
+
+  <p><a href="/members/<%= member.id %>/sub-account/new">Open Sub-Account</a></p>
+
+  <% if (member.subAccounts.length > 0) { %>
+    <h4>Sub-Accounts</h4>
+    <table border="1" cellpadding="6" bgcolor="#ffffff">
+      <tr bgcolor="#dddddd"><td><b>Account Number</b></td><td><b>Type</b></td><td><b>Initial Deposit</b></td></tr>
+      <% member.subAccounts.forEach(function(sa) { %>
+      <tr>
+        <td><%= sa.accountNumber %></td>
+        <td><%= sa.accountType %></td>
+        <td>$<%= sa.initialDeposit.toFixed(2) %></td>
+      </tr>
+      <% }) %>
+    </table>
+  <% } %>
+
+<% } %>
+
+</td></tr>
+</table>
+</body>
+</html>

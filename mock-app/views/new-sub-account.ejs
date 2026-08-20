@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Open Sub-Account - Member <%= member.id %></title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<table width="100%" bgcolor="#c0c0c0" cellpadding="10">
+<tr><td>
+
+<font face="Verdana" size="+1" color="#000080"><b>Member Services Console</b></font>
+&nbsp;&nbsp;
+<a href="/members/<%= member.id %>">Back to Member</a>
+<hr>
+
+<p>Opening a new sub-account for <b><%= member.name %></b> (Member ID <%= member.id %>)</p>
+
+<% if (error) { %>
+  <p><font color="red"><%= error %></font></p>
+<% } %>
+
+<form method="POST" action="/members/<%= member.id %>/sub-account">
+  <table cellpadding="6">
+    <tr><td>
+      <label>Account Type<br>
+        <select name="accountType">
+          <option value="MONEY_MARKET" <%= accountType === "MONEY_MARKET" ? "selected" : "" %>>Money Market</option>
+          <option value="CD" <%= accountType === "CD" ? "selected" : "" %>>Certificate of Deposit</option>
+          <option value="YOUTH_SAVINGS" <%= accountType === "YOUTH_SAVINGS" ? "selected" : "" %>>Youth Savings</option>
+        </select>
+      </label>
+    </td></tr>
+
+    <tr><td>
+      <label>Initial Deposit (USD)<br>
+        <input type="text" name="initialDeposit" value="<%= initialDeposit %>">
+      </label>
+    </td></tr>
+  </table>
+  <br>
+  <button type="submit">Open Sub-Account</button>
+</form>
+
+</td></tr>
+</table>
+</body>
+</html>

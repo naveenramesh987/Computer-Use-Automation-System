@@ -1,0 +1,18 @@
+body {
+  font-family: Verdana, Geneva, sans-serif;
+  background-color: #c0c0c0;
+  margin: 0;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+a {
+  color: #000080;
+}
+
+button {
+  font-family: Verdana, Geneva, sans-serif;
+  padding: 2px 10px;
+}
