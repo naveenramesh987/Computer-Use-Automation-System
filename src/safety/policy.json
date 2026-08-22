@@ -1,0 +1,4 @@
+{
+  "allowedDomains": ["localhost"],
+  "irreversibleActions": [{ "role": "button", "name": "Open Sub-Account" }]
+}

@@ -1,0 +1,111 @@
+{
+  "id": "lookup-member-balance-v1",
+  "name": "lookup-member-balance",
+  "version": "1.0.0",
+  "target": {
+    "app": "mock-bank-backoffice",
+    "baseUrl": "http://localhost:4000"
+  },
+  "inputs": [
+    { "name": "memberId", "description": "5-digit member ID to look up" }
+  ],
+  "outputs": [
+    {
+      "name": "balance",
+      "description": "Member's current savings balance in USD"
+    }
+  ],
+  "steps": [
+    { "action": "navigate", "url": "http://localhost:4000/login" },
+    {
+      "action": "fill",
+      "target": {
+        "role": "textbox",
+        "name": "Username",
+        "reason": "Native label-wrapped input; name comes from real HTML, not a CSS hook."
+      },
+      "value": "demo-operator"
+    },
+    {
+      "action": "fill",
+      "target": {
+        "role": "textbox",
+        "name": "Password",
+        "reason": "Native label-wrapped input; name comes from real HTML, not a CSS hook."
+      },
+      "value": "demo1234"
+    },
+    {
+      "action": "click",
+      "target": {
+        "role": "button",
+        "name": "Sign In",
+        "reason": "Native button element; role and text come from HTML semantics."
+      },
+      "risk": "safe",
+      "checkpoint": { "kind": "urlContains", "value": "/members" }
+    },
+    {
+      "action": "fill",
+      "target": {
+        "role": "textbox",
+        "name": "Member ID or Name",
+        "reason": "Native label-wrapped input on the search page."
+      },
+      "value": { "paramRef": "memberId" }
+    },
+    {
+      "action": "click",
+      "target": {
+        "role": "button",
+        "name": "Search",
+        "reason": "Native button element."
+      },
+      "risk": "safe"
+    },
+    {
+      "action": "click",
+      "target": {
+        "role": "link",
+        "name": "View",
+        "reason": "Search by exact memberId returns exactly one row, so this link is unambiguous."
+      },
+      "risk": "safe",
+      "checkpoint": { "kind": "urlContains", "value": "/members/" }
+    },
+    {
+      "action": "extract",
+      "rowContains": "Current Savings Balance",
+      "cellIndex": 1,
+      "outputKey": "balance",
+      "reason": "Label/value table row; the value is always the 2nd cell next to its label."
+    }
+  ],
+  "outcomeRules": [
+    {
+      "id": "not-found",
+      "detect": { "kind": "textVisible", "value": "No member found with ID" },
+      "classification": "businessOutcome",
+      "code": "MEMBER_NOT_FOUND",
+      "message": "No member exists with the given ID."
+    },
+    {
+      "id": "locked",
+      "detect": { "kind": "textVisible", "value": "Access denied" },
+      "classification": "businessOutcome",
+      "code": "MEMBER_LOCKED",
+      "message": "The member's account is locked."
+    },
+    {
+      "id": "invalid-format",
+      "detect": { "kind": "textVisible", "value": "Invalid member ID format" },
+      "classification": "businessOutcome",
+      "code": "INVALID_MEMBER_ID",
+      "message": "The supplied member ID is not a valid 5-digit ID."
+    }
+  ],
+  "successCheckpoint": {
+    "kind": "textVisible",
+    "value": "Current Savings Balance"
+  }
+}
