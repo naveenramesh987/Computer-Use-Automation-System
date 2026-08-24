@@ -9,6 +9,7 @@ export async function launch(): Promise<{ browser: Browser; page: Page }> {
     headless: false,
   });
   const page = await browser.newPage();
+  page.setDefaultTimeout(5000);
   return { browser, page };
 }
 

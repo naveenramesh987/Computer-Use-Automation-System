@@ -83,6 +83,13 @@
   ],
   "outcomeRules": [
     {
+      "id": "search-not-found",
+      "detect": { "kind": "textVisible", "value": "No members found matching" },
+      "classification": "businessOutcome",
+      "code": "MEMBER_NOT_FOUND",
+      "message": "No member exists with the given ID."
+    },
+    {
       "id": "not-found",
       "detect": { "kind": "textVisible", "value": "No member found with ID" },
       "classification": "businessOutcome",

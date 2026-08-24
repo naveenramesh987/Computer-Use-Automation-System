@@ -1,0 +1,238 @@
+import Anthropic from "@anthropic-ai/sdk";
+import type { Page } from "playwright";
+import { launch, click, fill } from "../surface/browser.js";
+import { checkPolicy } from "../safety/allowlist.js";
+import { tools } from "./tools.js";
+import { buildSystemPrompt } from "./prompt.js";
+import type { RunLogger } from "../logging/logger.js";
+
+export type TrajectoryStep =
+  | { action: "navigate"; url: string }
+  | { action: "click"; role: string; name: string; reason: string }
+  | {
+      action: "fill";
+      role: string;
+      name: string;
+      reason: string;
+      value: string;
+    }
+  | {
+      action: "extract";
+      rowContains: string;
+      cellIndex: number;
+      outputKey: string;
+      reason: string;
+    };
+
+export type DiscoveryResult =
+  | {
+      status: "finished";
+      outputs: Record<string, unknown>;
+      trajectory: TrajectoryStep[];
+    }
+  | { status: "escalated"; reason: string; trajectory: TrajectoryStep[] }
+  | { status: "stopped"; reason: string; trajectory: TrajectoryStep[] };
+
+// Runs a discovery session: opens a browser, shows Claude the goal and the
+// current page, then lets it choose one action per turn (navigate, click,
+// fill, extract) until it finishes, escalates, or runs out of steps.
+export async function discover(
+  goal: string,
+  baseUrl: string,
+  logger: RunLogger,
+  maxSteps = 15,
+): Promise<DiscoveryResult> {
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const model = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-5";
+  const system = buildSystemPrompt(goal, baseUrl);
+
+  const { browser, page } = await launch();
+  const trajectory: TrajectoryStep[] = [];
+  const outputs: Record<string, unknown> = {};
+
+  // Goes to the starting page, then repeatedly shows Claude the current
+  // page and runs whichever action it picks, until it finishes, escalates,
+  // or the step limit is hit.
+  try {
+    await page.goto(baseUrl);
+    trajectory.push({ action: "navigate", url: baseUrl });
+
+    const messages: Anthropic.MessageParam[] = [
+      { role: "user", content: await describeCurrentPage(page) },
+    ];
+
+    for (let step = 0; step < maxSteps; step++) {
+      const response = await client.messages.create({
+        model,
+        system,
+        tools,
+        max_tokens: 1024,
+        messages,
+      });
+
+      const toolUse = response.content.find(
+        (block) => block.type === "tool_use",
+      );
+
+      if (!toolUse) {
+        return {
+          status: "stopped",
+          reason: "Claude did not choose an action.",
+          trajectory,
+        };
+      }
+
+      logger.log({
+        type: "agent_action",
+        step,
+        tool: toolUse.name,
+        input: toolUse.input,
+      });
+      messages.push({ role: "assistant", content: response.content });
+
+      let resultText: string;
+
+      // Run whichever action Claude picked. Each branch checks the safety
+      // policy first, then performs it and records it in the trajectory.
+      // If anything throws (a click that times out, an element that isn't
+      // there), the catch below turns it into text for Claude to react to,
+      // instead of crashing the whole run.
+      try {
+        if (toolUse.name === "navigate") {
+          const input = toolUse.input as { url: string };
+          const policyResult = checkPolicy({
+            kind: "navigate",
+            url: input.url,
+          });
+
+          if (!policyResult.allowed) {
+            resultText = `Blocked: ${policyResult.reason}`;
+          } else {
+            await page.goto(input.url);
+            trajectory.push({ action: "navigate", url: input.url });
+            resultText = `Navigated to ${input.url}.\n\n${await describeCurrentPage(page)}`;
+          }
+        } else if (toolUse.name === "click") {
+          const input = toolUse.input as {
+            role: "button" | "link";
+            name: string;
+            reason: string;
+          };
+          const policyResult = checkPolicy({
+            kind: "click",
+            role: input.role,
+            name: input.name,
+          });
+
+          if (!policyResult.allowed) {
+            resultText = `Blocked: ${policyResult.reason}`;
+          } else {
+            await click(page, input.role, input.name);
+            trajectory.push({
+              action: "click",
+              role: input.role,
+              name: input.name,
+              reason: input.reason,
+            });
+            resultText = `Clicked "${input.name}".\n\n${await describeCurrentPage(page)}`;
+          }
+        } else if (toolUse.name === "fill") {
+          const input = toolUse.input as {
+            role: "textbox" | "combobox";
+            name: string;
+            reason: string;
+            value: string;
+          };
+          const policyResult = checkPolicy({
+            kind: "fill",
+            role: input.role,
+            name: input.name,
+          });
+
+          if (!policyResult.allowed) {
+            resultText = `Blocked: ${policyResult.reason}`;
+          } else {
+            await fill(page, input.role, input.name, input.value);
+            trajectory.push({
+              action: "fill",
+              role: input.role,
+              name: input.name,
+              reason: input.reason,
+              value: input.value,
+            });
+            resultText = `Filled "${input.name}".\n\n${await describeCurrentPage(page)}`;
+          }
+        } else if (toolUse.name === "extract") {
+          const input = toolUse.input as {
+            rowContains: string;
+            cellIndex: number;
+            outputKey: string;
+            reason: string;
+          };
+          const labelCell = page.getByRole("cell", {
+            name: input.rowContains,
+            exact: true,
+          });
+          const row = labelCell.locator("..");
+          const cell = row.getByRole("cell").nth(input.cellIndex);
+          const value = (await cell.textContent())?.trim() ?? "";
+
+          outputs[input.outputKey] = value;
+          trajectory.push({
+            action: "extract",
+            rowContains: input.rowContains,
+            cellIndex: input.cellIndex,
+            outputKey: input.outputKey,
+            reason: input.reason,
+          });
+          resultText = `Extracted ${input.outputKey} = "${value}".\n\n${await describeCurrentPage(page)}`;
+        } else if (toolUse.name === "finish") {
+          const input = toolUse.input as {
+            outputs: Record<string, unknown>;
+            reason: string;
+          };
+          logger.log({
+            type: "agent_finish",
+            outputs: input.outputs,
+            reason: input.reason,
+          });
+          return {
+            status: "finished",
+            outputs: { ...outputs, ...input.outputs },
+            trajectory,
+          };
+        } else if (toolUse.name === "escalate") {
+          const input = toolUse.input as { reason: string };
+          logger.log({ type: "agent_escalate", reason: input.reason });
+          return { status: "escalated", reason: input.reason, trajectory };
+        } else {
+          resultText = `Unknown tool "${toolUse.name}" — ignoring.`;
+        }
+      } catch (error) {
+        resultText = `Error: ${error instanceof Error ? error.message : String(error)}\n\n${await describeCurrentPage(page)}`;
+      }
+
+      messages.push({
+        role: "user",
+        content: [
+          { type: "tool_result", tool_use_id: toolUse.id, content: resultText },
+        ],
+      });
+    }
+
+    return {
+      status: "stopped",
+      reason: "Max steps reached without finishing.",
+      trajectory,
+    };
+  } finally {
+    await browser.close();
+  }
+}
+
+// Describes the current page for Claude: its URL plus the accessibility
+// snapshot, the same text-based view every other part of this project uses.
+async function describeCurrentPage(page: Page): Promise<string> {
+  const ariaSnapshot = await page.locator("body").ariaSnapshot();
+  return `Current URL: ${page.url()}\n\nPage:\n${ariaSnapshot}`;
+}
