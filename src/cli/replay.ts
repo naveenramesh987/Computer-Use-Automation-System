@@ -1,12 +1,7 @@
 import fs from "node:fs";
 import { CapabilityArtifactSchema } from "../artifact/schema.js";
 import { replay } from "../replay/executor.js";
-
-// Reads the value that comes right after a flag like --artifact or --params.
-function readArg(name: string): string | undefined {
-  const index = process.argv.indexOf(`--${name}`);
-  return index === -1 ? undefined : process.argv[index + 1];
-}
+import { readArg } from "./args.js";
 
 const artifactPath = readArg("artifact");
 if (!artifactPath) {

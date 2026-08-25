@@ -86,7 +86,7 @@ export async function discover(
         type: "agent_action",
         step,
         tool: toolUse.name,
-        input: toolUse.input,
+        input: redactFillValue(toolUse.name, toolUse.input),
       });
       messages.push({ role: "assistant", content: response.content });
 
@@ -209,7 +209,15 @@ export async function discover(
           resultText = `Unknown tool "${toolUse.name}" — ignoring.`;
         }
       } catch (error) {
-        resultText = `Error: ${error instanceof Error ? error.message : String(error)}\n\n${await describeCurrentPage(page)}`;
+        const message = error instanceof Error ? error.message : String(error);
+
+        // Describing the page can itself fail (e.g. if the browser crashed),
+        // so this can't assume the page is still usable after an error.
+        try {
+          resultText = `Error: ${message}\n\n${await describeCurrentPage(page)}`;
+        } catch {
+          resultText = `Error: ${message}`;
+        }
       }
 
       messages.push({
@@ -228,6 +236,43 @@ export async function discover(
   } finally {
     await browser.close();
   }
+}
+
+const SENSITIVE_LABELS = ["password", "pin", "ssn", "secret"];
+
+// redact() from safety/redaction.ts only hides fields by their own key name
+// (e.g. a key literally called "password"), but a fill action's typed value
+// is stored generically under "value", next to a separate "name" field like
+// "Password" that only reveals it's sensitive by its content. This checks
+// that label specifically before a fill action gets logged.
+function redactFillValue(tool: string, input: unknown): unknown {
+  if (tool !== "fill" || typeof input !== "object" || input === null) {
+    return input;
+  }
+
+  const fillInput = input as { name?: string; value?: string };
+  const looksSensitive = SENSITIVE_LABELS.some((word) =>
+    fillInput.name?.toLowerCase().includes(word),
+  );
+
+  return looksSensitive ? { ...fillInput, value: "[REDACTED]" } : input;
+}
+
+// Same redaction, applied to a full trajectory — used before a
+// DiscoveryResult is printed or saved, so a typed password never ends up
+// in result.json either, not just the step-by-step log.
+export function redactTrajectory(trajectory: TrajectoryStep[]): TrajectoryStep[] {
+  return trajectory.map((step) => {
+    if (step.action !== "fill") {
+      return step;
+    }
+
+    const looksSensitive = SENSITIVE_LABELS.some((word) =>
+      step.name.toLowerCase().includes(word),
+    );
+
+    return looksSensitive ? { ...step, value: "[REDACTED]" } : step;
+  });
 }
 
 // Describes the current page for Claude: its URL plus the accessibility
