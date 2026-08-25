@@ -45,6 +45,7 @@ export const StepSchema = z.discriminatedUnion("action", [
     reason: z.string(),
   }),
 ]);
+export type Step = z.infer<typeof StepSchema>;
 
 // Recognizes one outcome and says what it means: normal answer, retry, or real failure.
 export const OutcomeRuleSchema = z.object({

@@ -1,0 +1,58 @@
+{
+  "status": "finished",
+  "outputs": {
+    "balance": "$4231.55"
+  },
+  "trajectory": [
+    {
+      "action": "navigate",
+      "url": "http://localhost:4000"
+    },
+    {
+      "action": "fill",
+      "role": "textbox",
+      "name": "Username",
+      "reason": "This is a textbox with the visible label \"Username\" in the login form",
+      "value": "jsmith"
+    },
+    {
+      "action": "fill",
+      "role": "textbox",
+      "name": "Password",
+      "reason": "This is a textbox with the visible label \"Password\" in the login form",
+      "value": "[REDACTED]"
+    },
+    {
+      "action": "click",
+      "role": "button",
+      "name": "Sign In",
+      "reason": "This is the Sign In button that will submit the login form with the credentials I just entered"
+    },
+    {
+      "action": "fill",
+      "role": "textbox",
+      "name": "Member ID or Name",
+      "reason": "This is the textbox labeled \"Member ID or Name\" that allows searching for members",
+      "value": "12345"
+    },
+    {
+      "action": "click",
+      "role": "button",
+      "name": "Search",
+      "reason": "This is the Search button that will search for the member ID I just entered"
+    },
+    {
+      "action": "click",
+      "role": "link",
+      "name": "View",
+      "reason": "This is the View link in the search results row for member 12345 that will take me to their detailed account information"
+    },
+    {
+      "action": "extract",
+      "rowContains": "Current Savings Balance",
+      "cellIndex": 1,
+      "outputKey": "balance",
+      "reason": "This extracts the savings balance value from the second cell (index 1) of the row labeled \"Current Savings Balance\""
+    }
+  ]
+}

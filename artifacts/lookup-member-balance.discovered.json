@@ -1,0 +1,136 @@
+{
+  "id": "lookup-member-balance-v1",
+  "name": "lookup-member-balance",
+  "version": "1.0.0",
+  "target": {
+    "app": "mock-bank-backoffice",
+    "baseUrl": "http://localhost:4000"
+  },
+  "inputs": [
+    {
+      "name": "memberId",
+      "description": "memberId"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "balance",
+      "description": "balance"
+    }
+  ],
+  "steps": [
+    {
+      "action": "navigate",
+      "url": "http://localhost:4000"
+    },
+    {
+      "action": "fill",
+      "target": {
+        "role": "textbox",
+        "name": "Username",
+        "reason": "This is a textbox with the visible label \"Username\" in the login form"
+      },
+      "value": "jsmith"
+    },
+    {
+      "action": "fill",
+      "target": {
+        "role": "textbox",
+        "name": "Password",
+        "reason": "This is a textbox with the visible label \"Password\" in the login form"
+      },
+      "value": "demo1234"
+    },
+    {
+      "action": "click",
+      "target": {
+        "role": "button",
+        "name": "Sign In",
+        "reason": "This is the Sign In button that will submit the login form with the credentials I just entered"
+      },
+      "risk": "safe"
+    },
+    {
+      "action": "fill",
+      "target": {
+        "role": "textbox",
+        "name": "Member ID or Name",
+        "reason": "This is the textbox labeled \"Member ID or Name\" that allows searching for members"
+      },
+      "value": {
+        "paramRef": "memberId"
+      }
+    },
+    {
+      "action": "click",
+      "target": {
+        "role": "button",
+        "name": "Search",
+        "reason": "This is the Search button that will search for the member ID I just entered"
+      },
+      "risk": "safe"
+    },
+    {
+      "action": "click",
+      "target": {
+        "role": "link",
+        "name": "View",
+        "reason": "This is the View link in the search results row for member 12345 that will take me to their detailed account information"
+      },
+      "risk": "safe"
+    },
+    {
+      "action": "extract",
+      "rowContains": "Current Savings Balance",
+      "cellIndex": 1,
+      "outputKey": "balance",
+      "reason": "This extracts the savings balance value from the second cell (index 1) of the row labeled \"Current Savings Balance\""
+    }
+  ],
+  "outcomeRules": [
+    {
+      "id": "search-not-found",
+      "detect": {
+        "kind": "textVisible",
+        "value": "No members found matching"
+      },
+      "classification": "businessOutcome",
+      "code": "MEMBER_NOT_FOUND",
+      "message": "No member exists with the given ID."
+    },
+    {
+      "id": "not-found",
+      "detect": {
+        "kind": "textVisible",
+        "value": "No member found with ID"
+      },
+      "classification": "businessOutcome",
+      "code": "MEMBER_NOT_FOUND",
+      "message": "No member exists with the given ID."
+    },
+    {
+      "id": "locked",
+      "detect": {
+        "kind": "textVisible",
+        "value": "Access denied"
+      },
+      "classification": "businessOutcome",
+      "code": "MEMBER_LOCKED",
+      "message": "The member's account is locked."
+    },
+    {
+      "id": "invalid-format",
+      "detect": {
+        "kind": "textVisible",
+        "value": "Invalid member ID format"
+      },
+      "classification": "businessOutcome",
+      "code": "INVALID_MEMBER_ID",
+      "message": "The supplied member ID is not a valid 5-digit ID."
+    }
+  ],
+  "successCheckpoint": {
+    "kind": "textVisible",
+    "value": "Current Savings Balance"
+  }
+}

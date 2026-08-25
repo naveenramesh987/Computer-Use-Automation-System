@@ -66,6 +66,10 @@ export async function discover(
         model,
         system,
         tools,
+        // This loop only ever handles one tool call per turn, so Claude
+        // must be prevented from returning several at once — otherwise
+        // the API rejects the next request for an unanswered tool call.
+        tool_choice: { type: "auto", disable_parallel_tool_use: true },
         max_tokens: 1024,
         messages,
       });
