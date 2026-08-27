@@ -1,0 +1,16 @@
+[
+  {
+    "id": "deposit-too-low",
+    "detect": { "kind": "textVisible", "value": "Initial deposit must be at least" },
+    "classification": "businessOutcome",
+    "code": "VALIDATION_ERROR",
+    "message": "The initial deposit did not meet the minimum required amount."
+  },
+  {
+    "id": "search-not-found",
+    "detect": { "kind": "textVisible", "value": "No members found matching" },
+    "classification": "businessOutcome",
+    "code": "MEMBER_NOT_FOUND",
+    "message": "No member exists with the given ID."
+  }
+]

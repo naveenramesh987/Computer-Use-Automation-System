@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { Page } from "playwright";
 import { launch, click, fill } from "../surface/browser.js";
 import { checkPolicy } from "../safety/allowlist.js";
+import { SENSITIVE_KEYS } from "../safety/redaction.js";
 import { tools } from "./tools.js";
 import { buildSystemPrompt } from "./prompt.js";
 import type { RunLogger } from "../logging/logger.js";
@@ -122,11 +123,13 @@ export async function discover(
             name: string;
             reason: string;
           };
-          const policyResult = checkPolicy({
-            kind: "click",
-            role: input.role,
-            name: input.name,
-          });
+          // Discovery is a supervised run with a human watching the real
+          // browser window, unlike replay (the unattended, repeatable
+          // production path) — so irreversible actions are allowed here.
+          const policyResult = checkPolicy(
+            { kind: "click", role: input.role, name: input.name },
+            true,
+          );
 
           if (!policyResult.allowed) {
             resultText = `Blocked: ${policyResult.reason}`;
@@ -242,8 +245,6 @@ export async function discover(
   }
 }
 
-const SENSITIVE_LABELS = ["password", "pin", "ssn", "secret"];
-
 // redact() from safety/redaction.ts only hides fields by their own key name
 // (e.g. a key literally called "password"), but a fill action's typed value
 // is stored generically under "value", next to a separate "name" field like
@@ -255,7 +256,7 @@ function redactFillValue(tool: string, input: unknown): unknown {
   }
 
   const fillInput = input as { name?: string; value?: string };
-  const looksSensitive = SENSITIVE_LABELS.some((word) =>
+  const looksSensitive = SENSITIVE_KEYS.some((word) =>
     fillInput.name?.toLowerCase().includes(word),
   );
 
@@ -271,7 +272,7 @@ export function redactTrajectory(trajectory: TrajectoryStep[]): TrajectoryStep[]
       return step;
     }
 
-    const looksSensitive = SENSITIVE_LABELS.some((word) =>
+    const looksSensitive = SENSITIVE_KEYS.some((word) =>
       step.name.toLowerCase().includes(word),
     );
 

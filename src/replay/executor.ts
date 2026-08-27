@@ -83,10 +83,18 @@ export async function replay(
 
           await page.goto(step.url);
         } else if (step.action === "fill") {
-          const value =
-            typeof step.value === "string"
-              ? step.value
-              : (params[step.value.paramRef] ?? "");
+          // A literal is used as-is; a paramRef comes from the caller's
+          // params; a secretRef is read fresh from an env var, never from
+          // a file — that's the whole point of not embedding it literally.
+          let value: string;
+
+          if (typeof step.value === "string") {
+            value = step.value;
+          } else if ("paramRef" in step.value) {
+            value = params[step.value.paramRef] ?? "";
+          } else {
+            value = process.env[step.value.secretRef] ?? "";
+          }
           const policyResult = checkPolicy({
             kind: "fill",
             role: step.target.role,

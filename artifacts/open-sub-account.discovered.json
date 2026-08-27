@@ -1,0 +1,151 @@
+{
+  "id": "open-sub-account-v1",
+  "name": "open-sub-account",
+  "version": "1.0.0",
+  "target": {
+    "app": "mock-bank-backoffice",
+    "baseUrl": "http://localhost:4000"
+  },
+  "inputs": [
+    {
+      "name": "memberId",
+      "description": "memberId"
+    },
+    {
+      "name": "initialDeposit",
+      "description": "initialDeposit"
+    }
+  ],
+  "outputs": [
+    {
+      "name": "account_number",
+      "description": "account_number"
+    }
+  ],
+  "steps": [
+    {
+      "action": "navigate",
+      "url": "http://localhost:4000"
+    },
+    {
+      "action": "fill",
+      "target": {
+        "role": "textbox",
+        "name": "Username",
+        "reason": "This is a standard HTML textbox labeled 'Username' in the login form"
+      },
+      "value": "jsmith"
+    },
+    {
+      "action": "fill",
+      "target": {
+        "role": "textbox",
+        "name": "Password",
+        "reason": "This is a standard HTML textbox labeled 'Password' in the login form"
+      },
+      "value": {
+        "secretRef": "MOCK_APP_PASSWORD"
+      }
+    },
+    {
+      "action": "click",
+      "target": {
+        "role": "button",
+        "name": "Sign In",
+        "reason": "This is the submit button for the login form, clearly labeled 'Sign In'"
+      },
+      "risk": "safe"
+    },
+    {
+      "action": "fill",
+      "target": {
+        "role": "textbox",
+        "name": "Member ID or Name",
+        "reason": "This is a standard HTML textbox labeled 'Member ID or Name' for searching members"
+      },
+      "value": {
+        "paramRef": "memberId"
+      }
+    },
+    {
+      "action": "click",
+      "target": {
+        "role": "button",
+        "name": "Search",
+        "reason": "This is the search button to find the member by ID or name"
+      },
+      "risk": "safe"
+    },
+    {
+      "action": "click",
+      "target": {
+        "role": "link",
+        "name": "View",
+        "reason": "This is the link to view member 12345's details, located in the search results table"
+      },
+      "risk": "safe"
+    },
+    {
+      "action": "click",
+      "target": {
+        "role": "link",
+        "name": "Open Sub-Account",
+        "reason": "This is the link to open a new sub-account for this member"
+      },
+      "risk": "safe"
+    },
+    {
+      "action": "fill",
+      "target": {
+        "role": "textbox",
+        "name": "Initial Deposit (USD)",
+        "reason": "This is a standard HTML textbox labeled 'Initial Deposit (USD)' for entering the deposit amount"
+      },
+      "value": {
+        "paramRef": "initialDeposit"
+      }
+    },
+    {
+      "action": "click",
+      "target": {
+        "role": "button",
+        "name": "Open Sub-Account",
+        "reason": "This is the submit button to create the new sub-account with the specified details"
+      },
+      "risk": "irreversible"
+    },
+    {
+      "action": "extract",
+      "rowContains": "Account Number",
+      "cellIndex": 1,
+      "outputKey": "account_number",
+      "reason": "The account number is in the confirmation table, in the second cell (index 1) of the row labeled 'Account Number'"
+    }
+  ],
+  "outcomeRules": [
+    {
+      "id": "deposit-too-low",
+      "detect": {
+        "kind": "textVisible",
+        "value": "Initial deposit must be at least"
+      },
+      "classification": "businessOutcome",
+      "code": "VALIDATION_ERROR",
+      "message": "The initial deposit did not meet the minimum required amount."
+    },
+    {
+      "id": "search-not-found",
+      "detect": {
+        "kind": "textVisible",
+        "value": "No members found matching"
+      },
+      "classification": "businessOutcome",
+      "code": "MEMBER_NOT_FOUND",
+      "message": "No member exists with the given ID."
+    }
+  ],
+  "successCheckpoint": {
+    "kind": "textVisible",
+    "value": "Account Number"
+  }
+}

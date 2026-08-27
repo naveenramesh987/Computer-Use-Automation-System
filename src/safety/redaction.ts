@@ -1,4 +1,7 @@
-const SENSITIVE_KEYS = [
+// The one shared list of words that mark a field as sensitive, used here,
+// by the agent loop's logging, and by the recorder when deciding whether
+// a typed value is allowed to end up as a literal in a saved artifact.
+export const SENSITIVE_KEYS = [
   "password",
   "pin",
   "ssn",

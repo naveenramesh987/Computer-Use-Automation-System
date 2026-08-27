@@ -38,12 +38,20 @@ export async function click(
   await page.getByRole(role, { name }).click();
 }
 
-// Types text into a field on the page, identified the same way.
+// Types text into a field, or picks an option in a dropdown. A <select>
+// (role "combobox") needs a different Playwright method, matched by its
+// visible option text.
 export async function fill(
   page: Page,
   role: Role,
   name: string,
   value: string,
 ): Promise<void> {
-  await page.getByRole(role, { name }).fill(value);
+  const locator = page.getByRole(role, { name });
+
+  if (role === "combobox") {
+    await locator.selectOption({ label: value });
+  } else {
+    await locator.fill(value);
+  }
 }

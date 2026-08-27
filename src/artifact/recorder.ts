@@ -1,4 +1,5 @@
 import { checkPolicy } from "../safety/allowlist.js";
+import { SENSITIVE_KEYS } from "../safety/redaction.js";
 import type { TrajectoryStep } from "../agent/loop.js";
 import type {
   Step,
@@ -9,10 +10,13 @@ import type {
 } from "./schema.js";
 
 // Turns one thing Claude did into a real artifact step. A typed value
-// matching a declared input becomes a {paramRef} instead of a literal.
+// matching a declared input becomes a {paramRef}; a value matching a
+// declared secret becomes a {secretRef}. A sensitive-looking field that
+// matches neither throws, rather than silently saving a literal secret.
 function convertStep(
   step: TrajectoryStep,
   inputs: Record<string, string>,
+  secrets: Record<string, string>,
 ): Step {
   const role = (target: { role: string }) => target.role as TargetRef["role"];
 
@@ -41,7 +45,26 @@ function convertStep(
     const paramName = Object.keys(inputs).find(
       (key) => inputs[key] === step.value,
     );
-    const value = paramName ? { paramRef: paramName } : step.value;
+    const secretName = Object.keys(secrets).find(
+      (key) => secrets[key] === step.value,
+    );
+
+    const looksSensitive = SENSITIVE_KEYS.some((word) =>
+      step.name.toLowerCase().includes(word),
+    );
+
+    if (looksSensitive && !secretName) {
+      throw new Error(
+        `Field "${step.name}" looks sensitive but its value wasn't declared ` +
+          `as a secret — refusing to save it as a literal in the artifact.`,
+      );
+    }
+
+    const value = paramName
+      ? { paramRef: paramName }
+      : secretName
+        ? { secretRef: secretName }
+        : step.value;
 
     return {
       action: "fill",
@@ -70,6 +93,7 @@ export function recordArtifact(options: {
   inputs: Record<string, string>;
   outputs: Record<string, unknown>;
   outcomeRules: OutcomeRule[];
+  secrets?: Record<string, string>;
   successCheckpoint?: Checkpoint;
 }): CapabilityArtifact {
   const lastExtract = [...options.trajectory]
@@ -106,7 +130,9 @@ export function recordArtifact(options: {
       name: key,
       description: key,
     })),
-    steps: options.trajectory.map((step) => convertStep(step, options.inputs)),
+    steps: options.trajectory.map((step) =>
+      convertStep(step, options.inputs, options.secrets ?? {}),
+    ),
     outcomeRules: options.outcomeRules,
     successCheckpoint,
   };

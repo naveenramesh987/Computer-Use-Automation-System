@@ -39,7 +39,9 @@
         "name": "Password",
         "reason": "This is a textbox with the visible label \"Password\" in the login form"
       },
-      "value": "demo1234"
+      "value": {
+        "secretRef": "MOCK_APP_PASSWORD"
+      }
     },
     {
       "action": "click",

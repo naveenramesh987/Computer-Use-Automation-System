@@ -1,3 +1,4 @@
+import "dotenv/config";
 import fs from "node:fs";
 import { nanoid } from "nanoid";
 import { CapabilityArtifactSchema } from "../artifact/schema.js";
@@ -17,10 +18,11 @@ const artifact = CapabilityArtifactSchema.parse(JSON.parse(raw));
 const paramsJson = readArg("params") ?? "{}";
 const params = JSON.parse(paramsJson);
 const runId = `replay-${nanoid(8)}`;
+const allowIrreversible = readArg("allowIrreversible") === "true";
 
 console.log(`Run ${runId}`);
 
-const result = await replay(artifact, params, runId);
+const result = await replay(artifact, params, runId, { allowIrreversible });
 
 console.log(JSON.stringify(result, null, 2));
 

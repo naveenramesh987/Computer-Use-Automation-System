@@ -35,7 +35,13 @@ export const StepSchema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("fill"),
     target: TargetRefSchema,
-    value: z.union([z.string(), z.object({ paramRef: z.string() })]),
+    // A literal, a per-invocation param, or a secret read from an
+    // environment variable at replay time — never a literal secret value.
+    value: z.union([
+      z.string(),
+      z.object({ paramRef: z.string() }),
+      z.object({ secretRef: z.string() }),
+    ]),
   }),
   z.object({
     action: z.literal("extract"),
