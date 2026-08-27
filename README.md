@@ -120,7 +120,7 @@ npm run typecheck
 Replay, discovery, and the human handoff are checked against the real, live mock app during
 development, not mocked out in the test suite. `/evidence/` has the actual recorded runs.
 
-## What's where
+## Project layout
 
 ```text
 mock-app/            the app being automated
