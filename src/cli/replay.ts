@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { nanoid } from "nanoid";
 import { CapabilityArtifactSchema } from "../artifact/schema.js";
 import { replay } from "../replay/executor.js";
 import { readArg } from "./args.js";
@@ -15,7 +16,11 @@ const raw = fs.readFileSync(artifactPath, "utf8");
 const artifact = CapabilityArtifactSchema.parse(JSON.parse(raw));
 const paramsJson = readArg("params") ?? "{}";
 const params = JSON.parse(paramsJson);
-const result = await replay(artifact, params);
+const runId = `replay-${nanoid(8)}`;
+
+console.log(`Run ${runId}`);
+
+const result = await replay(artifact, params, runId);
 
 console.log(JSON.stringify(result, null, 2));
 

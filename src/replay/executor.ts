@@ -1,6 +1,9 @@
+import fs from "node:fs";
+import path from "node:path";
 import { Page } from "playwright";
 import { launch, click, fill } from "../surface/browser.js";
 import { checkPolicy } from "../safety/allowlist.js";
+import { requestIntervention } from "../escalation/controller.js";
 import { CapabilityArtifact, Checkpoint } from "../artifact/schema.js";
 
 export type ReplayResult =
@@ -29,12 +32,32 @@ function describeCheckpoint(checkpoint: Checkpoint): string {
   return `text "${checkpoint.value}" visible on the page`;
 }
 
+// Pauses replay and waits for a human to act in the same live browser
+// window. Takes a screenshot first so the operator page has something to
+// show, using the same evidence folder every other run writes to.
+async function pauseForHuman(
+  page: Page,
+  runId: string,
+  reason: string,
+  step: number,
+): Promise<void> {
+  const dir = path.join("evidence", runId);
+  fs.mkdirSync(dir, { recursive: true });
+
+  const screenshotPath = path.join(dir, `intervention-step-${step}.png`);
+  await page.screenshot({ path: screenshotPath });
+
+  await requestIntervention(runId, reason, step, screenshotPath);
+}
+
 // Runs a saved artifact with no AI involved. Goes through its steps one
 // by one, checks each action against the safety policy first, and stops
-// as soon as it hits a business outcome, a blocked action, or a failure.
+// as soon as it hits a business outcome or a failure — a blocked action
+// pauses for a human instead of stopping outright.
 export async function replay(
   artifact: CapabilityArtifact,
   params: Record<string, string>,
+  runId: string,
   options: { allowIrreversible?: boolean } = {},
 ): Promise<ReplayResult> {
   const { browser, page } = await launch();
@@ -54,7 +77,8 @@ export async function replay(
         if (step.action === "navigate") {
           const policyResult = checkPolicy({ kind: "navigate", url: step.url });
           if (!policyResult.allowed) {
-            return { status: "escalated", reason: policyResult.reason };
+            await pauseForHuman(page, runId, policyResult.reason, i);
+            continue;
           }
 
           await page.goto(step.url);
@@ -70,7 +94,8 @@ export async function replay(
           });
 
           if (!policyResult.allowed) {
-            return { status: "escalated", reason: policyResult.reason };
+            await pauseForHuman(page, runId, policyResult.reason, i);
+            continue;
           }
 
           await fill(page, step.target.role, step.target.name, value);
@@ -81,7 +106,8 @@ export async function replay(
           );
 
           if (!policyResult.allowed) {
-            return { status: "escalated", reason: policyResult.reason };
+            await pauseForHuman(page, runId, policyResult.reason, i);
+            continue;
           }
 
           await click(page, step.target.role, step.target.name);

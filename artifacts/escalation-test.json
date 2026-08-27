@@ -1,0 +1,60 @@
+{
+  "id": "escalation-test-v1",
+  "name": "escalation-test",
+  "version": "1.0.0",
+  "target": {
+    "app": "mock-bank-backoffice",
+    "baseUrl": "http://localhost:4000"
+  },
+  "inputs": [
+    { "name": "memberId", "description": "5-digit member ID to look up" }
+  ],
+  "outputs": [],
+  "steps": [
+    { "action": "navigate", "url": "http://localhost:4000/login" },
+    {
+      "action": "fill",
+      "target": { "role": "textbox", "name": "Username", "reason": "test fixture" },
+      "value": "jsmith"
+    },
+    {
+      "action": "fill",
+      "target": { "role": "textbox", "name": "Password", "reason": "test fixture" },
+      "value": "demo1234"
+    },
+    {
+      "action": "click",
+      "target": { "role": "button", "name": "Sign In", "reason": "test fixture" },
+      "risk": "safe",
+      "checkpoint": { "kind": "urlContains", "value": "/members" }
+    },
+    {
+      "action": "fill",
+      "target": { "role": "textbox", "name": "Member ID or Name", "reason": "test fixture" },
+      "value": { "paramRef": "memberId" }
+    },
+    {
+      "action": "click",
+      "target": { "role": "button", "name": "Search", "reason": "test fixture" },
+      "risk": "safe"
+    },
+    {
+      "action": "click",
+      "target": { "role": "link", "name": "View", "reason": "test fixture" },
+      "risk": "safe",
+      "checkpoint": { "kind": "urlContains", "value": "/members/" }
+    },
+    {
+      "action": "click",
+      "target": { "role": "link", "name": "Open Sub-Account", "reason": "test fixture" },
+      "risk": "safe"
+    },
+    {
+      "action": "click",
+      "target": { "role": "button", "name": "Open Sub-Account", "reason": "matches policy.json's irreversible list on purpose, to trigger a real pause" },
+      "risk": "irreversible"
+    }
+  ],
+  "outcomeRules": [],
+  "successCheckpoint": { "kind": "urlContains", "value": "localhost" }
+}
