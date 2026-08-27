@@ -20,7 +20,7 @@
     {
       "action": "fill",
       "target": { "role": "textbox", "name": "Password", "reason": "test fixture" },
-      "value": "demo1234"
+      "value": { "secretRef": "MOCK_APP_PASSWORD" }
     },
     {
       "action": "click",

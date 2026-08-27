@@ -33,7 +33,7 @@
         "name": "Password",
         "reason": "Native label-wrapped input; name comes from real HTML, not a CSS hook."
       },
-      "value": "demo1234"
+      "value": { "secretRef": "MOCK_APP_PASSWORD" }
     },
     {
       "action": "click",

@@ -50,21 +50,20 @@ async function pauseForHuman(
   await requestIntervention(runId, reason, step, screenshotPath);
 }
 
-// Runs a saved artifact with no AI involved. Goes through its steps one
-// by one, checks each action against the safety policy first, and stops
-// as soon as it hits a business outcome or a failure — a blocked action
-// pauses for a human instead of stopping outright.
-export async function replay(
+// Goes through the artifact's steps one by one, checks each action
+// against the safety policy first, and stops as soon as it hits a
+// business outcome or a failure — a blocked action pauses for a human
+// instead of stopping outright.
+async function runReplaySteps(
+  page: Page,
   artifact: CapabilityArtifact,
   params: Record<string, string>,
   runId: string,
-  options: { allowIrreversible?: boolean } = {},
+  options: { allowIrreversible?: boolean },
 ): Promise<ReplayResult> {
-  const { browser, page } = await launch();
   const outputs: Record<string, string> = {};
 
-  try {
-    for (let i = 0; i < artifact.steps.length; i++) {
+  for (let i = 0; i < artifact.steps.length; i++) {
       const step = artifact.steps[i];
       if (!step) {
         continue;
@@ -183,7 +182,42 @@ export async function replay(
       };
     }
 
-    return { status: "success", outputs };
+  return { status: "success", outputs };
+}
+
+// Saves what happened as evidence, in the same folder every other run
+// uses. Runs before the browser closes, since a failure or business
+// outcome also gets a screenshot of the page at that exact moment.
+async function saveReplayEvidence(
+  page: Page,
+  runId: string,
+  result: ReplayResult,
+): Promise<void> {
+  const dir = path.join("evidence", runId);
+  fs.mkdirSync(dir, { recursive: true });
+
+  if (result.status === "failure" || result.status === "businessOutcome") {
+    await page.screenshot({ path: path.join(dir, "final-state.png") });
+  }
+
+  fs.writeFileSync(path.join(dir, "result.json"), JSON.stringify(result, null, 2));
+}
+
+// Runs a saved artifact with no AI involved, and saves the outcome (plus
+// a screenshot on anything but success) as evidence before closing the
+// browser.
+export async function replay(
+  artifact: CapabilityArtifact,
+  params: Record<string, string>,
+  runId: string,
+  options: { allowIrreversible?: boolean } = {},
+): Promise<ReplayResult> {
+  const { browser, page } = await launch();
+
+  try {
+    const result = await runReplaySteps(page, artifact, params, runId, options);
+    await saveReplayEvidence(page, runId, result);
+    return result;
   } finally {
     await browser.close();
   }
