@@ -12,47 +12,47 @@
       "action": "fill",
       "role": "textbox",
       "name": "Username",
-      "reason": "This is a textbox with the visible label \"Username\" in the login form",
+      "reason": "This is a native textbox element with the label \"Username\" visible in the form",
       "value": "jsmith"
     },
     {
       "action": "fill",
       "role": "textbox",
       "name": "Password",
-      "reason": "This is a textbox with the visible label \"Password\" in the login form",
+      "reason": "This is a native textbox element with the label \"Password\" visible in the form",
       "value": "[REDACTED]"
     },
     {
       "action": "click",
       "role": "button",
       "name": "Sign In",
-      "reason": "This is the Sign In button that will submit the login form with the credentials I just entered"
+      "reason": "This is the submit button for the login form, clearly labeled as \"Sign In\""
     },
     {
       "action": "fill",
       "role": "textbox",
       "name": "Member ID or Name",
-      "reason": "This is the textbox labeled \"Member ID or Name\" that allows searching for members",
+      "reason": "This is a native textbox element with the label \"Member ID or Name\" for searching members",
       "value": "12345"
     },
     {
       "action": "click",
       "role": "button",
       "name": "Search",
-      "reason": "This is the Search button that will search for the member ID I just entered"
+      "reason": "This is the search button that will look up the member by the entered ID"
     },
     {
       "action": "click",
       "role": "link",
       "name": "View",
-      "reason": "This is the View link in the search results row for member 12345 that will take me to their detailed account information"
+      "reason": "This is the \"View\" link in the search results that will navigate to the member's detailed account page"
     },
     {
       "action": "extract",
       "rowContains": "Current Savings Balance",
       "cellIndex": 1,
       "outputKey": "balance",
-      "reason": "This extracts the savings balance value from the second cell (index 1) of the row labeled \"Current Savings Balance\""
+      "reason": "The row labeled \"Current Savings Balance\" contains the balance value in the second cell (index 1)"
     }
   ]
 }

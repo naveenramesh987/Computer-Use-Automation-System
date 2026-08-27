@@ -35,10 +35,10 @@ real secrets.
 
 ## Try it
 
-These commands are written for Windows PowerShell. In the JSON arguments, the backslashes
-before the inner quotes (like `'{\"memberId\":\"12345\"}'`) are needed on PowerShell only, since
-it re-parses the command to run `npm`. On macOS/Linux/bash, drop the backslashes instead:
-`'{"memberId":"12345"}'`.
+Every command below is written as a single line on purpose, so it works the same in PowerShell,
+bash, or cmd, no line-continuation character needed. In the JSON arguments, the backslashes
+before the inner quotes (like `'{\"memberId\":\"12345\"}'`) are needed on Windows PowerShell
+only, since it re-parses the command to run `npm`.
 
 Start the mock app first in its own terminal:
 
@@ -51,13 +51,7 @@ npm run mock-app
 **1. Let the AI figure out a task** (opens a browser window):
 
 ```bash
-npm run discover -- \
-  --goal "Log in with username jsmith and password demo1234, look up member 12345, and report their current savings balance." \
-  --target "http://localhost:4000" \
-  --name lookup-member-balance \
-  --inputs '{\"memberId\":\"12345\"}' \
-  --secrets '{\"MOCK_APP_PASSWORD\":\"demo1234\"}' \
-  --outcomeRulesFrom artifacts/lookup-member-balance.json
+npm run discover -- --goal "Log in with username jsmith and password demo1234, look up member 12345, and report their current savings balance." --target "http://localhost:4000" --name lookup-member-balance --inputs '{\"memberId\":\"12345\"}' --secrets '{\"MOCK_APP_PASSWORD\":\"demo1234\"}' --outcomeRulesFrom artifacts/lookup-member-balance.json
 ```
 
 Watch it drive the browser. It saves what happened to `evidence/discover-<id>/`, and saves what
@@ -66,17 +60,13 @@ it learned to `artifacts/lookup-member-balance.discovered.json`.
 **2. Replay that same task, no AI this time:**
 
 ```bash
-npm run replay -- \
-  --artifact artifacts/lookup-member-balance.discovered.json \
-  --params '{\"memberId\":\"12345\"}'
+npm run replay -- --artifact artifacts/lookup-member-balance.discovered.json --params '{\"memberId\":\"12345\"}'
 ```
 
 Try a member ID that doesn't exist, to see it report a clean result instead of crashing:
 
 ```bash
-npm run replay -- \
-  --artifact artifacts/lookup-member-balance.discovered.json \
-  --params '{\"memberId\":\"99999\"}'
+npm run replay -- --artifact artifacts/lookup-member-balance.discovered.json --params '{\"memberId\":\"99999\"}'
 ```
 
 Every replay saves what happened (and a screenshot, if it wasn't a plain success) to
@@ -88,25 +78,19 @@ let it go through:
 
 ```bash
 # Deposit too small, a normal validation error
-npm run replay -- \
-  --artifact artifacts/open-sub-account.discovered.json \
-  --params '{\"memberId\":\"12345\",\"initialDeposit\":\"10\"}' \
-  --allowIrreversible true
+npm run replay -- --artifact artifacts/open-sub-account.discovered.json --params '{\"memberId\":\"12345\",\"initialDeposit\":\"10\"}' --allowIrreversible true
+```
 
+```bash
 # A real completed run, actually opens a sub-account
-npm run replay -- \
-  --artifact artifacts/open-sub-account.discovered.json \
-  --params '{\"memberId\":\"23456\",\"initialDeposit\":\"250\"}' \
-  --allowIrreversible true
+npm run replay -- --artifact artifacts/open-sub-account.discovered.json --params '{\"memberId\":\"23456\",\"initialDeposit\":\"250\"}' --allowIrreversible true
 ```
 
 **4. Human handoff.** Run a replay *without* `--allowIrreversible` on the same risky action, and
 instead of finishing on its own, it pauses:
 
 ```bash
-npm run replay -- \
-  --artifact artifacts/open-sub-account.discovered.json \
-  --params '{\"memberId\":\"12345\",\"initialDeposit\":\"250\"}'
+npm run replay -- --artifact artifacts/open-sub-account.discovered.json --params '{\"memberId\":\"12345\",\"initialDeposit\":\"250\"}'
 ```
 
 The command will look stuck. That's expected. It's paused, and the browser window is still open
@@ -117,14 +101,19 @@ npm run operator
 # Operator console running at http://localhost:4100
 ```
 
-Open `http://localhost:4100`. You'll see the paused run, why it stopped, and a link to a
-screenshot of that moment. Click **Resume**, and the original `replay` command picks back up
-and finishes.
+Open `http://localhost:4100`. You'll see the paused run and why it stopped.
+
+Before clicking Resume, go to the actual browser window and click the real **Open Sub-Account**
+button yourself. That's the manual step a human is meant to do; replay won't do it for you.
+Then click **Resume**, and the original `replay` command finishes.
 
 ## Tests
 
 ```bash
-npm test        # safety policy, redaction, artifact schema
+npm test
+```
+
+```bash
 npm run typecheck
 ```
 

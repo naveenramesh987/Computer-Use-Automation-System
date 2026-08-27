@@ -25,6 +25,33 @@ export type TrajectoryStep =
       reason: string;
     };
 
+// Anthropic's API sometimes returns a temporary "Overloaded" error. Retry
+// a couple of times before giving up, instead of crashing the whole run.
+async function createMessageWithRetry(
+  client: Anthropic,
+  params: Anthropic.MessageCreateParamsNonStreaming,
+  maxAttempts = 3,
+): Promise<Anthropic.Message> {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await client.messages.create(params);
+    } catch (error) {
+      const status = error instanceof Anthropic.APIError ? error.status : undefined;
+      const isRetryable = status === 529 || status === 503 || status === 429;
+
+      if (!isRetryable || attempt === maxAttempts) {
+        throw error;
+      }
+
+      const delayMs = 2000 * attempt;
+      console.log(`Anthropic API returned ${status}, retrying in ${delayMs}ms (attempt ${attempt}/${maxAttempts})...`);
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+
+  throw new Error("unreachable");
+}
+
 export type DiscoveryResult =
   | {
       status: "finished";
@@ -63,7 +90,7 @@ export async function discover(
     ];
 
     for (let step = 0; step < maxSteps; step++) {
-      const response = await client.messages.create({
+      const response = await createMessageWithRetry(client, {
         model,
         system,
         tools,
